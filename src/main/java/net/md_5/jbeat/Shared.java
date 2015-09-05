@@ -60,19 +60,19 @@ final class Shared {
     /**
      * The file header.
      */
-    static final char[] magicHeader = new char[]{'B', 'P', 'S', '1'};
+    static final char[] MAGIC_HEADER = new char[]{'B', 'P', 'S', '1'};
     /**
      * beat metadata uses UTF-8 by specification.
      */
-    static final Charset charset = Charset.forName("UTF-8");
+    static final Charset CHARSET = Charset.forName("UTF-8");
     /**
-     * UTF-8 decoder.
+     * UTF-8 DECODER.
      */
-    static final CharsetDecoder decoder = charset.newDecoder();
+    static final CharsetDecoder DECODER = Shared.CHARSET.newDecoder();
     /**
-     * UTF-8 encoder.
+     * UTF-8 ENCODER.
      */
-    static final CharsetEncoder encoder = charset.newEncoder();
+    static final CharsetEncoder ENCODER = Shared.CHARSET.newEncoder();
 
     /**
      * Creates a crc32 checksum of a ByteBuffer. This method will checksum up to
@@ -88,4 +88,5 @@ final class Shared {
         crc.update(back);
         return crc.getValue();
     }
+
 }

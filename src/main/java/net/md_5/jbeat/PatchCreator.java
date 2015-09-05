@@ -121,7 +121,7 @@ abstract class PatchCreator {
             source = sourceFile.getChannel().map(FileChannel.MapMode.READ_ONLY, 0, sourceLength);
             target = targetFile.getChannel().map(FileChannel.MapMode.READ_ONLY, 0, targetLength);
             // write header
-            for (char c : magicHeader) {
+            for (char c : MAGIC_HEADER) {
                 out.write(c);
             }
             // write original size
@@ -133,7 +133,7 @@ abstract class PatchCreator {
             encode(out, headerLength);
             // write the header
             if (header != null) {
-                ByteBuffer encoded = encoder.encode(CharBuffer.wrap(header));
+                ByteBuffer encoded = ENCODER.encode(CharBuffer.wrap(header));
                 out.write(encoded.array(), encoded.arrayOffset(), encoded.limit());
             }
             // do the actual patch

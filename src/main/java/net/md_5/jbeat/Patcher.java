@@ -28,33 +28,15 @@
  */
 package net.md_5.jbeat;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.RandomAccessFile;
+import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
-import static net.md_5.jbeat.Shared.*;
 
 /**
  * beat version 1 compliant binary patcher.
  */
-public final class Patcher {
-
-    /**
-     * The patch which we will get our instructions from.
-     */
-    private final RandomAccessFile patchFile;
-    /**
-     * The clean, unmodified file. This must be the same file from which the
-     * patch was generated.
-     */
-    private final RandomAccessFile sourceFile;
-    /**
-     * The location to which the new, patched file will be output.
-     */
-    private final RandomAccessFile targetFile;
+public final class Patcher extends PatcherIO {
 
     /**
      * Create a new beat patcher instance. In order to complete the patch
@@ -67,134 +49,26 @@ public final class Patcher {
      * read or write access
      */
     public Patcher(File patchFile, File sourceFile, File targetFile) throws FileNotFoundException {
-        this.patchFile = new RandomAccessFile(patchFile, "r");
-        this.sourceFile = new RandomAccessFile(sourceFile, "r");
-        this.targetFile = new RandomAccessFile(targetFile, "rw");
+        super(new FileInputStream(patchFile), new FileInputStream(sourceFile), new FileOutputStream(targetFile));
     }
 
-    /**
-     * The meat of the program, patches everything. All logic goes here.
-     */
-    public void patch() throws IOException {
-        try {
-            // store patch length
-            long patchLength = patchFile.length();
-            // map patch file into memory
-            ByteBuffer patch = patchFile.getChannel().map(FileChannel.MapMode.READ_ONLY, 0, patchLength);
-            // check the header
-            for (char c : magicHeader) {
-                if (patch.get() != c) {
-                    throw new IOException("Patch file does not contain correct BPS header!");
-                }
-            }
-            // read source size
-            long sourceSize = decode(patch);
-            // map as much of the source file as we need into memory
-            ByteBuffer source = sourceFile.getChannel().map(FileChannel.MapMode.READ_ONLY, 0, sourceSize);
-            // read target size
-            long targetSize = decode(patch);
-            // expand the target file
-            targetFile.setLength(targetSize);
-            // map a large enough chunk of the target into memory
-            ByteBuffer target = targetFile.getChannel().map(FileChannel.MapMode.READ_WRITE, 0, targetSize);
-            // read metadata
-            String metadata = readString(patch);
-            // store last offsets
-            int sourceOffset = 0, targetOffset = 0;
-            // do the actual patching
-            while (patch.position() < patchLength - 12) {
-                long length = decode(patch);
-                long mode = length & 3;
-                length = (length >> 2) + 1;
-                // branch per mode
-                if (mode == SOURCE_READ) {
-                    while (length-- != 0) {
-                        target.put(source.get(target.position()));
-                    }
-                } else if (mode == TARGET_READ) {
-                    while (length-- != 0) {
-                        target.put(patch.get());
-                    }
-                } else {
-                    // start the same
-                    long data = decode(patch);
-                    long offset = (((data & 1) != 0) ? -1 : 1) * (data >> 1);
-                    // descend deeper
-                    if (mode == SOURCE_COPY) {
-                        sourceOffset += offset;
-                        while (length-- != 0) {
-                            target.put(source.get(sourceOffset++));
-                        }
-                    } else {
-                        targetOffset += offset;
-                        while (length-- != 0) {
-                            target.put(target.get(targetOffset++));
-                        }
-                    }
-                }
-            }
-            // flip to little endian mode
-            patch.order(ByteOrder.LITTLE_ENDIAN);
-            // checksum of the source
-            long sourceChecksum = readInt(patch);
-            if (checksum(source, sourceSize) != sourceChecksum) {
-                throw new IOException("Source checksum does not match!");
-            }
-            // checksum of the target
-            long targetChecksum = readInt(patch);
-            if (checksum(target, targetSize) != targetChecksum) {
-                throw new IOException("Target checksum does not match!");
-            }
-            // checksum of the patch itself
-            long patchChecksum = readInt(patch);
-            if (checksum(patch, patchLength - 4) != patchChecksum) {
-                throw new IOException("Patch checksum does not match!");
-            }
-        } finally {
-            // close the streams
-            patchFile.close();
-            sourceFile.close();
-            targetFile.close();
+    public static void main(final String[] arguments) throws IOException {
+        if (arguments == null || arguments.length != 3) {//Check for valid arguments
+            System.out.println("You must have valid arguments!");
+            System.out.println("The first argument, should be where the patch file is located.");
+            System.out.println("The second argument, should be where the source file is located (the file we're going to copy, then patch later on).");
+            System.out.println("The third argument, should be where the patched file should be put into. (The is a copied version of the source file, then it is patched with the patch file.)");
+            System.out.println("\"FileNotFoundException\" means that the file could not be created, located, wrote to, or read from.");
+            return;
         }
-    }
-
-    /**
-     * Read a UTF-8 string with variable length number length descriptor. Will
-     * return null if there is no data read, or the string is of 0 length.
-     */
-    private String readString(ByteBuffer in) throws IOException {
-        int length = (int) decode(in);
-        String ret = null;
-        if (length != 0) {
-            int limit = in.limit();
-            in.limit(in.position() + length);
-            ret = charset.decode(in).toString();
-            in.limit(limit);
+        File patchFile = new File(arguments[0]), inputFile = new File(arguments[1]), outputFile = new File(arguments[2]);
+        if (!patchFile.exists()) {//Check if the patch file exists, if it doesn't, throw a FileNotFoundException.
+            throw new FileNotFoundException("The patch file does not exist at location \"" + arguments[0] + "\"!");
         }
-        return ret;
-    }
-
-    /**
-     * Read a set of bytes from a buffer return them as a unsigned integer.
-     */
-    private long readInt(ByteBuffer in) throws IOException {
-        return in.getInt() & 0xFFFFFFFFL;
-    }
-
-    /**
-     * Read a single variable length number from the input stream.
-     */
-    private long decode(ByteBuffer in) throws IOException {
-        long data = 0, shift = 1;
-        while (true) {
-            byte x = in.get();
-            data += (x & 0x7F) * shift;
-            if ((x & 0x80) != 0x00) {
-                break;
-            }
-            shift <<= 7;
-            data += shift;
+        if (!inputFile.exists()) {//Check if the input file exists, if it doesn't, throw a FileNotFoundException.
+            throw new FileNotFoundException("The input file does not exist at location \"" + arguments[1] + "\"");
         }
-        return data;
+        new Patcher(patchFile, inputFile, outputFile);
     }
+
 }
