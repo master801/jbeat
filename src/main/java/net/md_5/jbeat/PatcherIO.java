@@ -138,24 +138,29 @@ public class PatcherIO {
                     }
                 }
             }
+
             // flip to little endian mode
             patch.order(ByteOrder.LITTLE_ENDIAN);
+
             // checksum of the source
             final long sourceChecksum = PatcherIO.readInt(patch);
             if (Shared.checksum(source, sourceSize) != sourceChecksum) {
                 throw new IOException("Source checksum does not match!");
             }
+
             // checksum of the target
             final long targetChecksum = PatcherIO.readInt(patch);
             if (Shared.checksum(target, targetSize) != targetChecksum) {
                 throw new IOException("Target checksum does not match!");
             }
+
             // checksum of the patch itself
-            long patchChecksum = PatcherIO.readInt(patch);
+            final long patchChecksum = PatcherIO.readInt(patch);
             if (Shared.checksum(patch, patchLength - 4) != patchChecksum) {
                 throw new IOException("Patch checksum does not match!");
             }
-            outputFileOutStream.write(target.array());
+
+            outputFileOutStream.write(target.array());//Write the "target" to the output stream.
         } finally {
             // close the streams
             patchFileInputStream.close();

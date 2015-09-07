@@ -68,7 +68,7 @@ public final class Patcher extends PatcherIO {
         if (!inputFile.exists()) {//Check if the input file exists, if it doesn't, throw a FileNotFoundException.
             throw new FileNotFoundException("The input file does not exist at location \"" + arguments[1] + "\"");
         }
-        new Patcher(patchFile, inputFile, outputFile);
+        new Patcher(patchFile, inputFile, outputFile).patch();
     }
 
 }
