@@ -1,0 +1,102 @@
+
+repositories {
+    mavenCentral()
+    maven {
+        url = project.properties['artifactory_contextUrl'] + '/gradle-dev-local'
+    }
+}
+
+apply plugin: 'java'
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+group = 'net.md-5'
+version = project.properties['version']
+
+dependencies {
+    testCompile(
+            group: 'junit',
+            name: 'junit',
+            version: project.properties['junit-version']
+    )
+
+/*
+    compile(
+            group: 'com.google.guava',
+            name: 'guava',
+            version: project.properties['guava-version']
+    )
+    compile(
+            group: 'org.slf4j',
+            name: 'slf4j-api',
+            version: project.properties['sl4j-version']
+    )
+    compile(
+            group: 'commons-codec',
+            name: 'commons-codec',
+            version: project.properties['commons-codec-version']
+    )
+    compile(
+            group: 'commons-io',
+            name: 'commons-io',
+            version: project.properties['commons-io-version']
+    )
+    compile(
+            group: 'org.apache.logging.log4j',
+            name: 'log4j-slf4j-impl',
+            version: project.properties['log4j-version']
+    )
+    compile(
+            group: 'org.apache.logging.log4j',
+            name: 'log4j-api',
+            version: project.properties['log4j-version']
+    )
+    compile(
+            group: 'org.apache.logging.log4j',
+            name: 'log4j-core',
+            version: project.properties['log4j-version']
+    )
+    compile(
+            group: 'args4j',
+            name: 'args4j',
+            version: project.properties['args4j-version']
+    )
+    compile(
+            group: 'com.google.code.gson',
+            name: 'gson',
+            version: project.properties['gson-version']
+    )
+
+    compile(
+            group: 'org.slave.lib',
+            name: 'lib',
+            version: project.properties['slave-lib-version']
+    )
+    compile(
+            group: 'org.slave.lib',
+            name: 'log',
+            version: project.properties['slave-lib-version']
+    )
+    compile(
+            group: 'org.slave.lib',
+            name: 'io',
+            version: project.properties['slave-lib-version']
+    )
+    compile(
+            group: 'org.slave.lib',
+            name: 'javafx',
+            version: project.properties['slave-lib-version']
+    )
+    compile(
+            group: 'org.slave.lib',
+            name: 'program',
+            version: project.properties['slave-lib-version']
+    )
+    compile(
+            group: 'org.slave.lib',
+            name: 'task',
+            version: project.properties['slave-lib-version']
+    )
+*/
+}
